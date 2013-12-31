@@ -1093,8 +1093,9 @@ class PracticeWebServer(Service):
         handler = APIHandler(self)
 
         self.wsgi_app = SharedDataMiddleware(handler, {
-            '/':        ('cms.web', 'practice'),
-            '/assets':  ('cms.web', 'assets')
+            '/':          ('cms.web', 'practice'),
+            '/assets':    ('cms.web', 'assets'),
+            '/resources': '/home/ioi/resources'
         })
 
     def run(self):
