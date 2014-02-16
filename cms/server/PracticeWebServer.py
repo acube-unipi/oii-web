@@ -40,8 +40,7 @@ from cms.io import Service
 from cms import ServiceCoord
 from cms.db.filecacher import FileCacher
 from cms.db import SessionGen, User, Submission, File, Task, Test, Tag, \
-    Forum, Topic, Post, TestScore, Institute, Region, Province, City, \
-    TaskScore, PrivateMessage, Talk
+    Forum, Topic, Post, TestScore, TaskScore, PrivateMessage, Talk
 from cmscommon.datetime import make_timestamp, make_datetime
 from cms.server import extract_archive
 
@@ -214,16 +213,6 @@ class APIHandler(object):
     def hashpw(self, pw):
         return self.hash(pw + config.secret_key)
 
-    def get_institute_info(self, institute):
-        info = dict()
-        if institute is not None:
-            info['id'] = institute.id
-            info['name'] = institute.name
-            info['city'] = institute.city.name
-            info['province'] = institute.city.province.name
-            info['region'] = institute.city.province.region.name
-        return info
-
     def get_user_info(self, user):
         info = dict()
         info['username'] = user.username
@@ -232,7 +221,6 @@ class APIHandler(object):
         info['mail_hash'] = self.hash(user.email, 'md5')
         info['post_count'] = len(user.posts)
         info['score'] = user.score
-        info['institute'] = self.get_institute_info(user.institute)
         return info
 
     # Handlers that do not require JSON data
@@ -294,33 +282,6 @@ class APIHandler(object):
             return 'Bad request'
         return err
 
-    def location_handler(self):
-        if local.data['action'] == 'get':
-            institute = local.session.query(Institute)\
-                .filter(Institute.id == local.data['id']).first()
-            if institute is None:
-                return 'Not found'
-            local.resp = self.get_institute_info(institute)
-        elif local.data['action'] == 'listregions':
-            out = local.session.query(Region).all()
-            local.resp['regions'] = [{'id': r.id, 'name': r.name}
-                                     for r in out]
-        elif local.data['action'] == 'listprovinces':
-            out = local.session.query(Province)\
-                .filter(Province.region_id == local.data['id']).all()
-            local.resp['provinces'] = [{'id': r.id, 'name': r.name}
-                                       for r in out]
-        elif local.data['action'] == 'listcities':
-            out = local.session.query(City)\
-                .filter(City.province_id == local.data['id']).all()
-            local.resp['cities'] = [{'id': r.id, 'name': r.name}
-                                    for r in out]
-        elif local.data['action'] == 'listinstitutes':
-            out = local.session.query(Institute)\
-                .filter(Institute.city_id == local.data['id']).all()
-            local.resp['institutes'] = [{'id': r.id, 'name': r.name}
-                                        for r in out]
-
     def user_handler(self):
         if local.data['action'] == 'new':
             try:
@@ -329,7 +290,6 @@ class APIHandler(object):
                 email = local.data['email']
                 firstname = local.data['firstname']
                 lastname = local.data['lastname']
-                institute = int(local.data['institute'])
             except KeyError:
                 logger.warning('Missing parameters')
                 return 'Bad request'
@@ -352,7 +312,6 @@ class APIHandler(object):
                 access_level=6,
                 registration_time=make_datetime()
             )
-            user.institute_id = institute
             try:
                 local.session.add(user)
                 local.session.commit()
@@ -393,17 +352,11 @@ class APIHandler(object):
                 .filter(User.hidden == False)\
                 .order_by(desc(User.score))\
                 .order_by(desc(User.id))
-            if 'institute' in local.data:
-                query = query\
-                    .filter(User.institute_id == local.data['institute'])
             users, local.resp['num'] = self.sliced_query(query)
             local.resp['users'] = map(self.get_user_info, users)
         elif local.data['action'] == 'update':
             if local.user is None:
                 return 'Unauthorized'
-            if 'institute' in local.data and \
-               local.data['institute'] is not None:
-                local.user.institute_id = int(local.data['institute'])
             if 'email' in local.data and \
                local.data['email'] != '' and \
                local.user.email != local.data['email']:

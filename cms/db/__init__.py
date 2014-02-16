@@ -51,8 +51,6 @@ __all__ = [
     "RepeatedUnicode",
     # contest
     "Contest", "Announcement",
-    # location
-    "Region", "Province", "City", "Institute",
     # user
     "User", "Message", "Question",
     # task
@@ -94,7 +92,6 @@ from .session import Session, ScopedSession, SessionGen, \
 from .types import RepeatedUnicode
 from .base import metadata, Base
 from .contest import Contest, Announcement
-from .location import Region, Province, City, Institute
 from .user import User, Message, Question
 from .task import Task, Statement, Attachment, SubmissionFormatElement, \
     Dataset, Manager, Testcase, Tag, TaskScore

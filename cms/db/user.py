@@ -34,7 +34,7 @@ from sqlalchemy.types import Boolean, Integer, String, Unicode, DateTime, \
     Interval
 from sqlalchemy.orm import relationship, backref
 
-from . import Base, Contest, Institute
+from . import Base, Contest
 
 
 def generate_random_password():
@@ -120,17 +120,17 @@ class User(Base):
         nullable=False)
 
     # Institute
-    institute_id = Column(
-        Integer,
-        ForeignKey(Institute.id,
-                   onupdate="CASCADE", ondelete="CASCADE"),
-        nullable=False,
-        index=True)
-    institute = relationship(
-        Institute,
-        backref=backref("users",
-                        cascade="all, delete-orphan",
-                        passive_deletes=True))
+    # institute_id = Column(
+    #     Integer,
+    #     ForeignKey(Institute.id,
+    #                onupdate="CASCADE", ondelete="CASCADE"),
+    #     nullable=False,
+    #     index=True)
+    # institute = relationship(
+    #     Institute,
+    #     backref=backref("users",
+    #                     cascade="all, delete-orphan",
+    #                     passive_deletes=True))
 
     # A JSON-encoded dictionary of lists of strings: statements["a"]
     # contains the language codes of the statements that will be

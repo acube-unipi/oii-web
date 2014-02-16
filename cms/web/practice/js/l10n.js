@@ -180,16 +180,6 @@ angular.module('pws.l10n', [])
     {it: 'Indirizzo e-mail'},
     'Confirm e-mail':
     {it: 'Ripeti e-mail'},
-    'Institute data':
-    {it: 'Dati della scuola di provenienza'},
-    'Region':
-    {it: 'Regione'},
-    'Province':
-    {it: 'Provincia'},
-    'City':
-    {it: 'Città'},
-    'Institute':
-    {it: 'Istituto'},
     'User profile preview':
     {it: 'Anteprima del profilo utente'},
     'Profile':
@@ -238,14 +228,6 @@ angular.module('pws.l10n', [])
     {it: 'E-mail già utilizzata'},
     'E-mails don\'t match':
     {it: 'Gli indirizzi non combaciano'},
-    'You must specify a region':
-    {it: 'Devi specificare una regione'},
-    'You must specify a province':
-    {it: 'Devi specificare una provincia'},
-    'You must specify a city':
-    {it: 'Devi specificare una città'},
-    'You must specify an institute':
-    {it: 'Devi specificare un istituto'},
 
     // Notifications
     'Welcome back':
