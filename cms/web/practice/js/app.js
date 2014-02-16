@@ -143,7 +143,7 @@ angular.module('pws', [
   })
   .filter('repext', function() {
     return function(input) {
-      return input.replace(/.%l$/, ".(cpp|c|pas)")
+      return input.replace(/.%l$/, ".c")
     };
   })
   .filter('outcomeToClass', function() {
