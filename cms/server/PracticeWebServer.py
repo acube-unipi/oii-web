@@ -381,11 +381,11 @@ class APIHandler(object):
     def task_handler(self):
         if local.data['action'] == 'list':
             query = local.session.query(Task)\
-                .filter(Task.access_level >= local.access_level)\
-                .order_by(desc(Task.id))
-            if 'tag' in local.data:
-                query = query.filter(Task.tags.any(name=local.data['tag']))
-            tasks, local.resp['num'] = self.sliced_query(query)
+                .filter(Task.access_level >= local.access_level)
+            # if 'tag' in local.data:
+            #     query = query.filter(Task.tags.any(name=local.data['tag']))
+            tasks = query.all()
+            local.resp['num'] = query.count()
             local.resp['tasks'] = []
             for t in tasks:
                 task = dict()

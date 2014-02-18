@@ -50,6 +50,10 @@ angular.module('pws.task', [])
       })
       .success(function(data, status, headers, config) {
         $rootScope.task = data;
+        for (var prop in data.statements) {
+          $rootScope.pdf_hash = data.statements[prop];
+          break;
+        }
       }).error(function(data, status, headers, config) {
         notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
     });

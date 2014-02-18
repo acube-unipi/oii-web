@@ -18,9 +18,38 @@
  */
 'use strict';
 
+function compareString(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0
+}
+
+function tasksSort(taskList) {
+  taskList = taskList.sort(function(a,b){
+    var aName = a.title
+    var bName = b.title
+    if (aName[0] != "L" && bName[0] != "L") {
+      return compareString(aName, bName)
+    }
+    if (aName[0] != "L") {
+      return 1
+    }
+    if (bName[0] != "L") {
+      return -1
+    }
+    var aLesson = parseInt(aName.slice(1,3))
+    var bLesson = parseInt(bName.slice(1,3))
+    if (aLesson != bLesson) {
+      return - compareString(aLesson, bLesson)
+    }
+    var aExercise = parseInt(aName.slice(1,3))
+    var bExercise = parseInt(bName.slice(1,3))
+    return compareString(aExercise, bExercise)
+  });
+}
+  
+
 /* Tasks page */
 
-angular.module('pws.tasks', ['pws.pagination'])
+angular.module('pws.tasks', [])
   .service('subsDatabase', function($http, $rootScope, $timeout,
       notificationHub, userManager, l10n) {
     $rootScope.submissions = {};
@@ -153,9 +182,9 @@ angular.module('pws.tasks', ['pws.pagination'])
     return this;
   })
   .controller('TasklistSkel', function($scope, $state, navbarManager) {
-    navbarManager.setActiveTab(0);
-    $scope.search = {tag: ''};
-    $scope.pagination = {perPage: 15};
+    navbarManager.setActiveTab(1);
+    // $scope.search = {tag: ''};
+    // $scope.pagination = {perPage: 15};
     $scope.getTasks = function() {
       // richiama getTasks() di TasklistPage
       $scope.$broadcast('getTasks');
@@ -163,23 +192,31 @@ angular.module('pws.tasks', ['pws.pagination'])
   })
   .controller('TasklistPage', function($scope, $stateParams, $state, $http,
       notificationHub, userManager, l10n) {
-    $scope.pagination.current = +$stateParams.pageNum;
+    // $scope.pagination.current = +$stateParams.pageNum;
     $scope.getTasks = function() {
       var data = {
-        'first':    $scope.pagination.perPage * ($scope.pagination.current-1),
-        'last':     $scope.pagination.perPage * $scope.pagination.current,
         'username': userManager.getUsername(),
         'token':    userManager.getToken(),
         'action':   'list'
       };
-      if ($scope.search.tag.length > 1) {
-        console.log($scope.search.tag); //FIXME
-        data.tag = $scope.search.tag;
-      }
+      // if ($scope.search.tag.length > 1) {
+      //   console.log($scope.search.tag); //FIXME
+      //   data.tag = $scope.search.tag;
+      // }
       $http.post('task', data)
         .success(function(data, status, headers, config) {
-          $scope.tasks = data['tasks'];
-          $scope.pagination.total = Math.ceil(data['num'] / $scope.pagination.perPage);
+          // More involved sorting
+          var tasks = data['tasks']
+          // var taskList = []
+          // var taskIndex = 0
+          // var step = 3
+          // while (taskIndex < tasks.length) {
+          //   taskList[taskIndex] = [taskIndex * step, (taskIndex + 1) * step]
+          //   taskIndex += 1
+          // }
+          // $scope.taskList = taskList
+          tasksSort(tasks)
+          $scope.tasks = tasks
         }).error(function(data, status, headers, config) {
           notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
         });

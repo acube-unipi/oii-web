@@ -33,7 +33,8 @@ angular.module('pws.user', [])
     };
   })
   .controller('UserbarCtrl', function($scope, $stateParams, $http,
-        $rootScope, userManager, notificationHub, userbarManager) {
+        $rootScope, userManager, notificationHub, userbarManager, navbarManager) {
+    navbarManager.setActiveTab(0);
     $scope.isActiveTab = userbarManager.isActiveTab;
     $scope.isLogged = userManager.isLogged;
     $scope.isMe = function() {
