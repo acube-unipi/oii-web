@@ -50,6 +50,7 @@ angular.module('pws.task', [])
       })
       .success(function(data, status, headers, config) {
         $rootScope.task = data;
+        $rootScope.pdf_hash = undefined
         for (var prop in data.statements) {
           $rootScope.pdf_hash = data.statements[prop];
           break;
