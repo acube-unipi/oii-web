@@ -1306,6 +1306,9 @@ class AddTaskHandler(BaseHandler):
 
             assert attrs.get("name") is not None, "No task name specified."
 
+            self.get_string(attrs, "lesson", empty=None)
+            self.get_string(attrs, "exercise", empty=None)
+
             self.get_string(attrs, "primary_statements")
 
             self.get_submission_format(attrs)
@@ -1394,6 +1397,10 @@ class TaskHandler(BaseHandler):
 
             self.get_string(attrs, "name", empty=None)
             self.get_string(attrs, "title")
+
+            self.get_string(attrs, "lesson", empty=None)
+            self.get_string(attrs, "exercise", empty=None)
+
 
             assert attrs.get("name") is not None, "No task name specified."
 

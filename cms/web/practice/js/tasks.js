@@ -23,26 +23,15 @@ function compareString(a, b) {
 }
 
 function tasksSort(taskList) {
-  taskList = taskList.sort(function(a,b){
-    var aName = a.title
-    var bName = b.title
-    if (aName[0] != "L" && bName[0] != "L") {
-      return compareString(aName, bName)
+  taskList = taskList.sort(function(t1,t2){
+    var t1Lesson = t1.lesson
+    var t2Lesson = t2.lesson
+    if (t1Lesson != t2Lesson) {
+      return - compareString(t1Lesson, t2Lesson)
     }
-    if (aName[0] != "L") {
-      return 1
-    }
-    if (bName[0] != "L") {
-      return -1
-    }
-    var aLesson = parseInt(aName.slice(1,3))
-    var bLesson = parseInt(bName.slice(1,3))
-    if (aLesson != bLesson) {
-      return - compareString(aLesson, bLesson)
-    }
-    var aExercise = parseInt(aName.slice(1,3))
-    var bExercise = parseInt(bName.slice(1,3))
-    return compareString(aExercise, bExercise)
+    var t1Ex = t1.exercise
+    var t2Ex = t2.exercise
+    return compareString(t1Ex, t2Ex)
   });
 }
   
@@ -207,16 +196,29 @@ angular.module('pws.tasks', [])
         .success(function(data, status, headers, config) {
           // More involved sorting
           var tasks = data['tasks']
-          // var taskList = []
-          // var taskIndex = 0
-          // var step = 3
-          // while (taskIndex < tasks.length) {
-          //   taskList[taskIndex] = [taskIndex * step, (taskIndex + 1) * step]
-          //   taskIndex += 1
-          // }
-          // $scope.taskList = taskList
-          tasksSort(tasks)
-          $scope.tasks = tasks
+
+          if (tasks.length == 0) {
+            $scope.taskSplits = []
+          } else {  
+            tasksSort(tasks)
+  
+            var splittedTasks = []
+            var prev = "_random_string"
+            var count = 0
+            var curSplit = []
+            for (var ex in tasks) {
+              if (tasks[ex].lesson != prev) {
+                prev = tasks[ex].lesson
+                splittedTasks.push(curSplit)
+                curSplit = []
+              }
+              curSplit.push(tasks[ex])
+            }
+            splittedTasks.shift()
+            splittedTasks.push(curSplit)
+  
+            $scope.splittedTasks = splittedTasks
+          }
         }).error(function(data, status, headers, config) {
           notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
         });

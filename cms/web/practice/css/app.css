@@ -433,3 +433,20 @@ table.submissions th {
     height: 1000px;
   }
 }
+
+/* Foldable lists */
+.toggling_on, .toggling_off {
+    cursor: pointer;
+}
+
+.toggling_on:before {
+    content: "\25BE\0000a0";
+}
+
+.toggling_off:before {
+    content: "\25B8\0000a0";
+}
+
+.toggled_div {
+    display: hidden;
+}

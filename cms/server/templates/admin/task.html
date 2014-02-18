@@ -58,8 +58,12 @@ $("select[name=task_type_{{ dataset.id }}]").change(function() {
         <td><input type="text" name="title" value="{{ task.title }}"/></td>
       </tr>
       <tr>
-        <td>Position</td>
-        <td>{{ task.num }}</td>
+        <td>Lesson</td>
+        <td><input type="text" name="lesson" value="{{ task.lesson }}"/></td>
+      </tr>
+      <tr>
+        <td>Exercise</td>
+        <td><input type="text" name="exercise" value="{{ task.exercise }}"/></td>
       </tr>
       <tr>
         <td>Statement</td>

@@ -2,7 +2,7 @@
 <html lang="it" ng-app="pws" xmlns:ng="http://angularjs.org" id="ng-app">
   <head>
     <meta charset="utf-8">
-    <title>Allenamenti OII</title>
+    <title>Algoritmica e Laboratorio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -36,6 +36,24 @@
         document.createElement('foot');
       </script>
     <![endif]-->
+    <script src="assets/js/jquery.min.js"></script>
+    <script type="text/javascript">
+        function toggle_visibility()
+        {
+          var title = $(this);
+          var item = $(this.id.replace("lesson_", "#").replace(".", "\\."));
+          item.slideToggle("normal", function() {title.toggleClass("toggling_on toggling_off")});
+        }
+
+        function init()
+        {
+          $(document).delegate('.toggling_on', 'click', toggle_visibility);
+          $(document).delegate('.toggling_off', 'click', toggle_visibility);          
+        }
+
+        $(document).ready(init);
+
+    </script>
 
     <link rel="shortcut icon" href="assets/ico/favicon.ico">
   </head>
@@ -53,7 +71,6 @@
     <script src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 -->
     <script src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script src="assets/js/jquery.min.js"></script>
     <script src="assets/js/bootstrap.min.js"></script>
     <script src="assets/js/angular.min.js"></script>
     <script src="assets/js/angular-ui-router.min.js"></script>

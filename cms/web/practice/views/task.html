@@ -1,5 +1,5 @@
 <div class="container">
-  <legend>{{task.title}}</legend>
+  <legend>Esercizio {{task.lesson}}-{{task.exercise}}: {{task.title}}</legend>
   <ul class="nav nav-tabs">
     <li ng-class="{active: isActiveTab(1)}">
       <a ui-sref=".statement"><i class="fa fa-file-text fa-lg"></i> {{'Statement' | l10n}}</a>

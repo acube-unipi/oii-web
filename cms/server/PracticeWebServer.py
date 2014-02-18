@@ -392,6 +392,8 @@ class APIHandler(object):
                 task['id'] = t.id
                 task['name'] = t.name
                 task['title'] = t.title
+                task['lesson'] = t.lesson
+                task['exercise'] = t.exercise
                 if local.user is not None:
                     taskscore = local.session.query(TaskScore)\
                         .filter(TaskScore.task_id == t.id)\
@@ -407,6 +409,8 @@ class APIHandler(object):
                 return 'Not found'
             local.resp['id'] = t.id
             local.resp['name'] = t.name
+            local.resp['lesson'] = t.lesson
+            local.resp['exercise'] = t.exercise
             local.resp['title'] = t.title
             local.resp['statements'] =\
                 dict([(l, s.digest) for l, s in t.statements.iteritems()])

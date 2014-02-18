@@ -125,6 +125,14 @@ class Task(Base):
         Unicode,
         nullable=False)
 
+    # Lesson and exercise
+    lesson = Column(
+        Unicode,
+        nullable=False)
+    exercise = Column(
+        Unicode,
+        nullable=False)
+
     # A JSON-encoded lists of strings: the language codes of the
     # statements that will be highlighted to all users for this task.
     primary_statements = Column(
