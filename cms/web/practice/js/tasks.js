@@ -47,17 +47,18 @@ angular.module('pws.tasks', [])
     var timeout;
     this.load = function(name) {
       $http.post('submission', {
-          'username': userManager.getUsername(),
-          'token': userManager.getToken(),
-          'action': 'list',
-          'task_name': name
-        })
-        .success(function(data, status, headers, config) {
-          $rootScope.submissions[name] = [];
-          for (var i=data['submissions'].length; i>0; i--)
-            addSub(name, data['submissions'][i-1]);
-        }).error(function(data, status, headers, config) {
-          notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
+        'username': userManager.getUser().username,
+        'token': userManager.getUser().token,
+        'action': 'list',
+        'task_name': name
+      })
+      .success(function(data, status, headers, config) {
+        $rootScope.submissions[name] = [];
+        for (var i=data['submissions'].length; i>0; i--)
+          addSub(name, data['submissions'][i-1]);
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
       });
       $timeout.cancel(timeout);
       updSubs();
@@ -126,8 +127,8 @@ angular.module('pws.tasks', [])
     }
     function subDetails(id) {
       $http.post('submission', {
-        "username": userManager.getUsername(),
-        "token": userManager.getToken(),
+        "username": userManager.getUser().username,
+        "token": userManager.getUser().token,
         "action": "details",
         "id": id
       })
@@ -135,8 +136,9 @@ angular.module('pws.tasks', [])
         replaceSub(id, data);
         $rootScope.curSub = id;
         $rootScope.actualCurSub = data;
-      }).error(function(data, status, headers, config) {
-        notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
       });
     }
     function updSubs() {
@@ -149,15 +151,16 @@ angular.module('pws.tasks', [])
             updAttempts[i]++;
             delete updInterval[i];
             $http.post('submission', {
-              'username': userManager.getUsername(),
-              'token': userManager.getToken(),
+              'username': userManager.getUser().username,
+              'token': userManager.getUser().token,
               'action': 'details',
               'id': i
             })
             .success(function(data, status, headers, config) {
               replaceSub(data["id"], data);
-            }).error(function(data, status, headers, config) {
-              notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
+            })
+            .error(function(data, status, headers, config) {
+              notificationHub.serverError(status);
             });
           }
         }
@@ -184,8 +187,8 @@ angular.module('pws.tasks', [])
     // $scope.pagination.current = +$stateParams.pageNum;
     $scope.getTasks = function() {
       var data = {
-        'username': userManager.getUsername(),
-        'token':    userManager.getToken(),
+        'username': userManager.getUser().username,
+        'token':    userManager.getUser().token,
         'action':   'list'
       };
       // if ($scope.search.tag.length > 1) {
@@ -220,7 +223,7 @@ angular.module('pws.tasks', [])
             $scope.splittedTasks = splittedTasks
           }
         }).error(function(data, status, headers, config) {
-          notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
+          notificationHub.serverError(status);
         });
     };
     $scope.$on('getTasks', function(e) {

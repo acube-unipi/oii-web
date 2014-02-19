@@ -37,27 +37,27 @@ angular.module('pws.user', [])
     navbarManager.setActiveTab(0);
     $scope.isActiveTab = userbarManager.isActiveTab;
     $scope.isLogged = userManager.isLogged;
+    $scope.myName = function(){
+      return userManager.getUser().username;
+    }
     $scope.isMe = function() {
-      return $stateParams.userId === userManager.getUsername();
+      return $stateParams.userId === userManager.getUser().username;
     };
   })
-  .factory('userManager', function($http, notificationHub) {
+  .factory('userManager', function($http, $sce, notificationHub) {
+    var getIt = function() {
+      return JSON.parse(localStorage.getItem('user')) || {};
+    };
     return {
+      getUser: getIt,
       isLogged: function() {
-        return localStorage.getItem('token') !== null &&
-               localStorage.getItem('username') !== null;
+        return getIt().hasOwnProperty("token");
       },
-      getUsername: function() {
-        return localStorage.getItem('username');
+      getGravatar: function(user, size) {
+        return $sce.trustAsUrl('http://gravatar.com/avatar/'+user.mail_hash+'?d=identicon&s='+size);
       },
-      getToken: function() {
-        return localStorage.getItem('token');
-      },
-      getAccessLevel: function() {
-        return localStorage.getItem('access_level');
-      },
-      getForumToolbar: function() {
-        var al = localStorage.getItem('access_level');
+      getForumToolbar: function(user) {
+        var al = user.access_level;
         if (al === null) return [];
         var t1 = ['p','pre','quote'];
         if (al < 4) {
@@ -77,19 +77,15 @@ angular.module('pws.user', [])
         }
         return ret;
       },
-      signin: function(token, username, access_level) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('username', username);
-        localStorage.setItem('access_level', access_level);
+      signin: function(user) {
+        localStorage.setItem('user', JSON.stringify(user));
       },
       signout: function() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('username');
-        localStorage.removeItem('access_level');
+        localStorage.removeItem('user');
       }
     };
   })
-  .controller('SignCtrl', function($scope, $http, userManager,
+  .controller('SignCtrl', function($scope, $http, $state, userManager,
         notificationHub, l10n) {
     $scope.user = {'username': '', 'password': ''};
     $scope.isLogged = userManager.isLogged;
@@ -104,17 +100,20 @@ angular.module('pws.user', [])
         })
         .success(function(data, status, headers, config) {
           if (data.success == 1) {
-            userManager.signin(data.token, $scope.user.username,
-              data.access_level);
+            console.log(JSON.stringify(data));
+            userManager.signin({
+              'username': data.user.username,
+              'token': data.token,
+              'access_level': data.user.access_level,
+              'mail_hash': data.user.mail_hash
+            });
             notificationHub.createAlert('success', l10n.get('Welcome back') +
-              ', ' + userManager.getUsername(), 2);
-          } else if (data.success == 0) {
+                ', ' + userManager.getUser().username, 2);
+          } else if (data.success === 0) {
             notificationHub.createAlert('danger', l10n.get('Sign in error'), 3);
           }
         }).error(function(data, status, headers, config) {
-          notificationHub.createAlert('danger', l10n.get('Internal error ' +
-            'during login: make sure your internet connection is working well' +
-            ' and, if this error occurs again, contact an administrator.'), 5);
+          notificationHub.serverError(status);
         });
     };
     $scope.signout = function() {
@@ -123,7 +122,7 @@ angular.module('pws.user', [])
     };
   })
   .controller('UserpageCtrl', function($scope, $http, notificationHub,
-      $stateParams, $location, $timeout, userbarManager, l10n) {
+      $stateParams, $state, $timeout, userbarManager, l10n) {
     userbarManager.setActiveTab(1);
     $timeout(function() {
       $('.my-tooltip').tooltip(); // enable tooltips
@@ -131,19 +130,201 @@ angular.module('pws.user', [])
     $http.post('user', {
       'action':   'get',
       'username': $stateParams.userId
-    }).success(function(data, status, headers, config) {
+    })
+    .success(function(data, status, headers, config) {
+      if (data.success === 1) {
         $scope.user = data;
-      }).error(function(data, status, headers, config) {
-        notificationHub.createAlert('danger', l10n.get('User doesn\'t exist'),
-          3);
-        $location.path('overview'); // FIXME: torna a home?
+      } else {
+        notificationHub.createAlert('danger', l10n.get('User doesn\'t exist'), 3);
+        $state.go('overview');
+      }
+    })
+    .error(function(data, status, headers, config) {
+      notificationHub.serverError(status);
+    });
+  })
+  .controller('UsertalksCtrl', function($scope, $http, notificationHub,
+      $stateParams, $state, $timeout, userbarManager, userManager) {
+    userbarManager.setActiveTab(2);
+    $http.post('talk', {
+      'action':   'list',
+      'username': userManager.getUser().username,
+      'token':    userManager.getUser().token,
+      'first':    0,
+      'last':     1000
+    })
+    .success(function(data, status, headers, config) {
+      if (data.success === 1) {
+        $scope.talks = data.talks;
+      } else {
+        $state.go("overview");
+      }
+    })
+    .error(function(data, status, headers, config) {
+      notificationHub.serverError(status);
+    });
+    $scope.me = userManager;
+    $scope.getRecipient = function(talk) {
+      if (talk.sender.username == userManager.getUser().username) {
+        return talk.receiver;
+      } else {
+        return talk.sender;
+      }
+    };
+  })
+  .controller('TalkRedirectCtrl', function($scope, $state, $stateParams,
+      $http, userbarManager, userManager, notificationHub, l10n) {
+    $http.post('talk', {
+      'action':   'get',
+      'username': userManager.getUser().username,
+      'token':    userManager.getUser().token,
+      'other':    $stateParams.recipientName
+    })
+    .success(function(data, status, headers, config) {
+      if (data.success === 1) {
+        $state.go('talk', {'talkId': data.id});
+      }
+    })
+    .error(function(data, status, headers, config) {
+      notificationHub.serverError(status);
+    });
+  })
+  .controller('TalkCtrl', function($scope, $state, $stateParams,
+      $http, $window, $timeout, userbarManager, userManager,
+      notificationHub, l10n) {
+    userbarManager.setActiveTab(2);
+    $scope.userToolbar = userManager.getForumToolbar(userManager.getUser());
+    $scope.me = userManager;
+    $scope.sendMessage = function() {
+      //~ console.log($stateParams.talkId);
+      $http.post('pm', {
+        'action': 'new',
+        'id': $stateParams.talkId,
+        'username': userManager.getUser().username,
+        'token':    userManager.getUser().token,
+        'text': $scope.newText
+      })
+      .success(function(data, status, headers, config) {
+        //~ console.log(JSON.stringify(data));
+        if (data.success === 1) {
+          notificationHub.createAlert('success', l10n.get('Message sent'), 2);
+          $scope.newText = '';
+          $scope.checkNew();
+        } else {
+          notificationHub.createAlert('danger', l10n.get(data.error), 2);
+        }
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
       });
+    };
+    var msgPerPage = 15;
+    var lastLast, lastTot;
+    $scope.downloadMore = function() {
+      $http.post('pm', {
+        'action':   'list',
+        'id':       $stateParams.talkId,
+        'username': userManager.getUser().username,
+        'token':    userManager.getUser().token,
+        'first':    lastLast,
+        'last':     msgPerPage + lastLast
+      })
+      .success(function(data, status, headers, config) {
+        console.log(JSON.stringify(data));
+        if (data.success === 1) {
+          lastLast += msgPerPage;
+          $scope.pms = data.pms.concat($scope.pms);
+          if ($scope.recipientName === undefined) {
+            $scope.recipientName = (userManager.getUser().username === data.sender)
+                ? data.receiver : data.sender;
+          }
+          lastTot = data.num;
+          if (lastLast < data.num) {
+            $("#showMore").show();
+          } else {
+            lastLast = data.num;
+            $("#showMore").hide();
+          }
+          //~ console.log(lastLast + " " + data.num);
+        } else {
+          notificationHub.createAlert('danger', l10n.get(data.error), 2);
+          $state.go("overview");
+        }
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
+      });
+    };
+    $scope.downloadMsg = function() {
+      $http.post('pm', {
+        'action':   'list',
+        'id':       $stateParams.talkId,
+        'username': userManager.getUser().username,
+        'token':    userManager.getUser().token,
+        'first':    0,
+        'last':     lastLast
+      })
+      .success(function(data, status, headers, config) {
+        //~ console.log(JSON.stringify(data));
+        if (data.success === 1) {
+          $scope.pms = data.pms;
+          if ($scope.recipientName === undefined) {
+            $scope.recipientName = (userManager.getUser().username === data.sender)
+                ? data.receiver : data.sender;
+          }
+          lastTot = data.num;
+          if (data.pms.length != data.num) {
+            $("#showMore").show();
+          }
+          $timeout(function() {
+            $window.scrollTo(0, parseFloat($("html").css('height')));
+          }, 100);
+        } else {
+          notificationHub.createAlert('danger', l10n.get(data.error), 2);
+          $state.go("overview");
+        }
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
+      });
+    };
+    $scope.checkNew = function() {
+      $http.post('pm', {
+        'action':   'list',
+        'id':       $stateParams.talkId,
+        'username': userManager.getUser().username,
+        'token':    userManager.getUser().token,
+        'first':    0,
+        'last':     1
+      })
+      .success(function(data, status, headers, config) {
+        //~ console.log(JSON.stringify(data));
+        if (data.success === 1) {
+          if (data.num == lastTot) {
+            notificationHub.createAlert('info', l10n.get('No new messages'), 1);
+          } else {
+            console.log(data.num + ' ' + lastLast);
+            $scope.downloadMsg();
+          }
+        } else {
+          notificationHub.createAlert('danger', l10n.get(data.error), 2);
+          $state.go("overview");
+        }
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
+      });
+    };
+    $("#showMore").hide();
+    lastLast = msgPerPage;
+    $scope.downloadMsg();
   })
   .controller('EdituserCtrl', function($scope, $state, $stateParams,
       $http, userbarManager, userManager, notificationHub, l10n) {
-    if (userManager.getUsername() !== $stateParams.userId)
+    if (userManager.getUser().username !== $stateParams.userId) {
       $state.go('overview');
-    userbarManager.setActiveTab(2);
+    }
+    userbarManager.setActiveTab(3);
     $scope.user = {
       password:  '',
       password2: '',
@@ -153,13 +334,13 @@ angular.module('pws.user', [])
     $scope.submit = function() {
       var data = {};
       data['action'] = 'update';
-      data['username'] = userManager.getUsername();
-      data['token'] = userManager.getToken();
+      data['username'] = userManager.getUser().username;
+      data['token'] = userManager.getUser().token;
       if ($scope.user.password2.length > 0) {
         if ($scope.user.password3 !== $scope.user.password2)
-          return notificationHub.createAlert('danger', l10n.get('signup.errors.password2'), 2);
+          return notificationHub.createAlert('danger', l10n.get('Passwords don\'t match'), 2);
         if ($scope.user.password.length < 1)
-          return notificationHub.createAlert('danger', l10n.get('signup.errors.mustPassword'), 2);
+          return notificationHub.createAlert('danger', l10n.get('You must specify your password'), 2);
         data['old_password'] = $scope.user.password;
         data['password'] = $scope.user.password2;
       }
@@ -169,18 +350,17 @@ angular.module('pws.user', [])
           if (data.success == 1) {
             if (data.hasOwnProperty('token'))
               localStorage.setItem('token', data['token']);
-            notificationHub.createAlert('success', l10n.get('user.edit.changed'), 2);
+            notificationHub.createAlert('success', l10n.get('Changes recorded'), 2);
             $state.go('^.profile');
           } else if (data.success == 0) {
             if (data.error === undefined)
-              notificationHub.createAlert('warning', l10n.get('user.edit.unchanged'), 3);
+              notificationHub.createAlert('warning', l10n.get('No changes recorded'), 3);
             else
               notificationHub.createAlert('danger', l10n.get(data.error), 3);
           }
-        }).error(function(data, status, headers, config) {
-          notificationHub.createAlert('danger', l10n.get('Internal error. Make'+
-            ' sure your internet connection is working well and, if this error'+
-            ' occurs again, contact an administrator.'), 5);
+        })
+        .error(function(data, status, headers, config) {
+          notificationHub.serverError(status);
         });
     };
   })

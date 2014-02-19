@@ -20,7 +20,7 @@
 /* Signup page */
 
 angular.module('pws.signup', [])
-  .controller('SignupCtrl', function ($scope, $http, $location,
+  .controller('SignupCtrl', function ($scope, $http, $state,
       notificationHub, navbarManager) {
     navbarManager.setActiveTab(5);
     $(".avatar")
@@ -86,30 +86,33 @@ angular.module('pws.signup', [])
       data['action'] = 'new';
       $http.post('user', data)
         .success(function(data, status, headers, config) {
-          if (data.success == 1) {
+          if (data.success === 1) {
             notificationHub.createAlert('success', 'Complimenti, ' +
               'la registrazione è andata a buon fine, adesso puoi accedere con le credenziali ' +
               'del tuo nuovo account usando il modulo in alto a destra. Una volta entrato ' +
               'nel sistema avrai la possibilità di sottoporre le soluzioni ai task presenti ' +
               'in questa pagina. Buon allenamento.', 10);
-            $location.path('tasks');
+            $state.go('tasklist.page', {'pageNum': 1});
           } else {
             notificationHub.createAlert('danger', data.error, 3);
           }
-        }).error(function(data, status, headers, config) {
-          notificationHub.createAlert('danger', 'Errore interno ' +
-            'in fase di registrazione: assicurati che la tua connessione a internet sia ' +
-            'funzionante e, se l\'errore dovesse ripetersi, contatta un amministratore.', 5);
+        })
+        .error(function(data, status, headers, config) {
+          notificationHub.serverError(status);
         });
     };
     $scope.askServer = function(type, value) {
-      $http.post('check', {'type': type, 'value': value})
-        .success(function(data, status, headers, config) {
-          $scope.isBad[type] = (data.success == 0);
-          $scope.errorMsg[type] = data.error;
-        }).error(function(data, status, headers, config) {
-          console.log('dati non ricevuti');
-        });
+      $http.post('check', {
+        'type': type,
+        'value': value
+      })
+      .success(function(data, status, headers, config) {
+        $scope.isBad[type] = (data.success == 0);
+        $scope.errorMsg[type] = data.error;
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
+      });
     };
     $scope.checkUsername = function() {
       $scope.askServer('username', $scope.user.username);
@@ -120,6 +123,65 @@ angular.module('pws.signup', [])
     $scope.checkPassword = function() {
       $scope.isBad['password'] = ($scope.user.password.length < 5);
     };
+<<<<<<< HEAD
+=======
+    $scope.checkRegion = function() {
+      $scope.isBad['region'] = false;
+      $http.post('location', {
+        'action': 'listprovinces',
+        'id':     $scope.user.region
+      }).success(function(data, status, headers, config) {
+        $scope.provinces = data.provinces;
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
+      });
+    };
+    $scope.checkProvince = function() {
+      $scope.isBad['province'] = false;
+      $http.post('location', {
+        'action': 'listcities',
+        'id':     $scope.user.province
+      }).success(function(data, status, headers, config) {
+        $scope.cities = data.cities;
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
+      });
+    };
+    $scope.checkCity = function() {
+      $scope.isBad['city'] = false;
+      $http.post('location', {
+        'action': 'listinstitutes',
+        'id':     $scope.user.city
+      }).success(function(data, status, headers, config) {
+        $scope.institutes = data.institutes;
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
+      });
+    };
+    $scope.checkInstitute = function() {
+      $scope.isBad['institute'] = false;
+    };
+    $scope.resetProvince = function() {
+      $scope.isBad['province'] = true;
+      $scope.user.province = undefined;
+      $scope.signupform.province.$dirty = false;
+      $scope.resetCity();
+    };
+    $scope.resetCity = function() {
+      $scope.isBad['city'] = true;
+      $scope.user.city = undefined;
+      $scope.signupform.city.$dirty = false;
+      $scope.resetInstitute();
+    };
+    $scope.resetInstitute = function() {
+      $scope.isBad['institute'] = true;
+      $scope.user.institute = undefined;
+      $scope.signupform.institute.$dirty = false;
+    };
+>>>>>>> upstream/master
     $scope.matchPassword = function() {
       $scope.isBad['password2'] = ($scope.user.password !== $scope.user.password2);
     };

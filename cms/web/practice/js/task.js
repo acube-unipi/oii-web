@@ -43,12 +43,11 @@ angular.module('pws.task', [])
     $scope.isLogged = userManager.isLogged;
     $scope.taskName = $stateParams.taskName;
     $http.post('task', {
-        'name': $stateParams.taskName,
-        'username': userManager.getUsername(),
-        'token': userManager.getToken(),
-        'action': 'get'
-      })
-      .success(function(data, status, headers, config) {
+      'name': $stateParams.taskName,
+      'username': userManager.getUser().username,
+      'token': userManager.getUser().token,
+      'action': 'get'
+    }).success(function(data, status, headers, config) {
         $rootScope.task = data;
         $rootScope.pdf_hash = undefined
         for (var prop in data.statements) {
@@ -56,7 +55,7 @@ angular.module('pws.task', [])
           break;
         }
       }).error(function(data, status, headers, config) {
-        notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
+      notificationHub.serverError(status);
     });
   })
   .controller('StatementCtrl', function($scope, $window, taskbarManager) {
@@ -78,8 +77,8 @@ angular.module('pws.task', [])
     $scope.getStats = function() {
       $http.post('task', {
         'name': $stateParams.taskName,
-        'username': userManager.getUsername(),
-        'token': userManager.getToken(),
+        'username': userManager.getUser().username,
+        'token': userManager.getUser().token,
         'action': 'stats'
       }).success(function(data, status, headers, config) {
         $scope.nsubs = data.nsubs;
@@ -87,8 +86,9 @@ angular.module('pws.task', [])
         $scope.nsubscorrect = data.nsubscorrect;
         $scope.nuserscorrect = data.nuserscorrect;
         $scope.best = data.best;
-      }).error(function(data, status, headers, config) {
-        notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
       });
     }
     $scope.getStats();
@@ -130,24 +130,27 @@ angular.module('pws.task', [])
     };
     $scope.submitFiles = function() {
       var data = {};
-      data['username'] = userManager.getUsername();
-      data['token'] = userManager.getToken();
+      data['username'] = userManager.getUser().username;
+      data['token'] = userManager.getUser().token;
       data['files'] = $scope.files;
       data['action'] = 'new';
       data['task_name'] = $scope.taskName;
       delete $scope.files;
-      $http.post('submission', data)
-        .success(function(data, status, headers, config) {
-          if (data['success']) {
-            subsDatabase.addSub($scope.taskName, data);
-            $("#submitform").each(function() {
-              this.reset();
-            });
-          }
-          else
-            notificationHub.createAlert('danger', data['error'], 2);
-      }).error(function(data, status, headers, config) {
-          notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
+      $http.post('submission',
+        data
+      )
+      .success(function(data, status, headers, config) {
+        if (data['success']) {
+          subsDatabase.addSub($scope.taskName, data);
+          $("#submitform").each(function() {
+            this.reset();
+          });
+        }
+        else
+          notificationHub.createAlert('danger', data['error'], 2);
+      })
+      .error(function(data, status, headers, config) {
+        notificationHub.serverError(status);
       });
     };
     $scope.showDetails = function(id) {

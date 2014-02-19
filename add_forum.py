@@ -13,8 +13,8 @@ def main():
 	# Apre una sessione e lista i forum
 	# forums = session.query(Forum).all()
 	forums = session.query(forum.Forum).all()
-	# print "Forums found: ", len(forums)
-	params = {'title': "Forum generale", 'description': "Forum generale di discussione per il laboratorio"}
+	print "Forums found: ", len(forums)
+	params = {'title': "Discussioni sul sito", 'description': "Per malfunzionamenti, dubbi o suggerimenti relativi al sito."}
 	my_forum = forum.Forum(**params)
 	session.add(my_forum)
 	session.commit()
