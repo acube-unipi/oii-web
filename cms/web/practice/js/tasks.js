@@ -22,12 +22,16 @@ function compareString(a, b) {
   return a < b ? -1 : a > b ? 1 : 0
 }
 
+function compareInt(a, b) {
+  return parseInt(a) - parseInt(b)
+}
+
 function tasksSort(taskList) {
   taskList = taskList.sort(function(t1,t2){
     var t1Lesson = t1.lesson
     var t2Lesson = t2.lesson
     if (t1Lesson != t2Lesson) {
-      return - compareString(t1Lesson, t2Lesson)
+      return - compareInt(t1Lesson, t2Lesson)
     }
     var t1Ex = t1.exercise
     var t2Ex = t2.exercise
@@ -47,18 +51,17 @@ angular.module('pws.tasks', [])
     var timeout;
     this.load = function(name) {
       $http.post('submission', {
-        'username': userManager.getUser().username,
-        'token': userManager.getUser().token,
-        'action': 'list',
-        'task_name': name
-      })
-      .success(function(data, status, headers, config) {
-        $rootScope.submissions[name] = [];
-        for (var i=data['submissions'].length; i>0; i--)
-          addSub(name, data['submissions'][i-1]);
-      })
-      .error(function(data, status, headers, config) {
-        notificationHub.serverError(status);
+          'username': userManager.getUsername(),
+          'token': userManager.getToken(),
+          'action': 'list',
+          'task_name': name
+        })
+        .success(function(data, status, headers, config) {
+          $rootScope.submissions[name] = [];
+          for (var i=data['submissions'].length; i>0; i--)
+            addSub(name, data['submissions'][i-1]);
+        }).error(function(data, status, headers, config) {
+          notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
       });
       $timeout.cancel(timeout);
       updSubs();
@@ -127,8 +130,8 @@ angular.module('pws.tasks', [])
     }
     function subDetails(id) {
       $http.post('submission', {
-        "username": userManager.getUser().username,
-        "token": userManager.getUser().token,
+        "username": userManager.getUsername(),
+        "token": userManager.getToken(),
         "action": "details",
         "id": id
       })
@@ -136,9 +139,8 @@ angular.module('pws.tasks', [])
         replaceSub(id, data);
         $rootScope.curSub = id;
         $rootScope.actualCurSub = data;
-      })
-      .error(function(data, status, headers, config) {
-        notificationHub.serverError(status);
+      }).error(function(data, status, headers, config) {
+        notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
       });
     }
     function updSubs() {
@@ -151,16 +153,15 @@ angular.module('pws.tasks', [])
             updAttempts[i]++;
             delete updInterval[i];
             $http.post('submission', {
-              'username': userManager.getUser().username,
-              'token': userManager.getUser().token,
+              'username': userManager.getUsername(),
+              'token': userManager.getToken(),
               'action': 'details',
               'id': i
             })
             .success(function(data, status, headers, config) {
               replaceSub(data["id"], data);
-            })
-            .error(function(data, status, headers, config) {
-              notificationHub.serverError(status);
+            }).error(function(data, status, headers, config) {
+              notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
             });
           }
         }
@@ -187,8 +188,8 @@ angular.module('pws.tasks', [])
     // $scope.pagination.current = +$stateParams.pageNum;
     $scope.getTasks = function() {
       var data = {
-        'username': userManager.getUser().username,
-        'token':    userManager.getUser().token,
+        'username': userManager.getUsername(),
+        'token':    userManager.getToken(),
         'action':   'list'
       };
       // if ($scope.search.tag.length > 1) {
@@ -223,7 +224,7 @@ angular.module('pws.tasks', [])
             $scope.splittedTasks = splittedTasks
           }
         }).error(function(data, status, headers, config) {
-          notificationHub.serverError(status);
+          notificationHub.createAlert('danger', l10n.get('Connection error'), 2);
         });
     };
     $scope.$on('getTasks', function(e) {
